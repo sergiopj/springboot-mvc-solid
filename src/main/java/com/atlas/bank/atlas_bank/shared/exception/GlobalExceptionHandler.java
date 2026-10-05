@@ -1,76 +1,74 @@
 package com.atlas.bank.atlas_bank.shared.exception;
 
+import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import com.atlas.bank.atlas_bank.account.exception.AccountNotActiveException;
 import com.atlas.bank.atlas_bank.account.exception.AccountNotFoundException;
+import com.atlas.bank.atlas_bank.account.exception.AccountNotActiveException;
 import com.atlas.bank.atlas_bank.transaction.exception.InsufficientFundsException;
 
-// Excepcion GLOBAL para manejar errores de la aplicacion, en este caso cuando no se encuentra una cuenta.
+// Filtro global de errores. Si en cualquier Controller o Service lanzas una excepción, cae aquí.
+// Convierte la excepción en un JSON estándar (RFC 7807 ProblemDetail) para el cliente.
+// En NestJS sería @Catch() global.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Maneja la excepcion AccountNotFoundException y devuelve un ProblemDetail con
-    // el estado HTTP 404 y un mensaje de error.
+    // 404 - La cuenta no existe
     @ExceptionHandler(AccountNotFoundException.class)
     public ProblemDetail handleAccountNotFoundException(AccountNotFoundException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.NOT_FOUND, ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Account Not Found");
         return problemDetail;
     }
 
+    // 422 - La cuenta existe pero está bloqueada/cerrada. Es error de negocio, no
+    // de datos.
     @ExceptionHandler(AccountNotActiveException.class)
     public ProblemDetail handleAccountNotActiveException(AccountNotActiveException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatusCode.valueOf(422), ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT,
+                ex.getMessage());
         problemDetail.setTitle("Account Not Active");
         return problemDetail;
     }
 
-    // Maneja la excepcion InsufficientFundsException y devuelve un ProblemDetail
-    // con el estado HTTP 422 y un mensaje de error.
+    // 422 - No hay saldo. También es error de negocio.
     @ExceptionHandler(InsufficientFundsException.class)
     public ProblemDetail handleInsufficientFundsException(InsufficientFundsException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatusCode.valueOf(422), ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT,
+                ex.getMessage());
         problemDetail.setTitle("Insufficient Funds");
         return problemDetail;
     }
 
-    // Maneja cualquier otra excepcion no controlada y devuelve un ProblemDetail con
-    // el estado HTTP 500 y un mensaje de error generico. muy importante para no
-    // exponer detalles internos de la aplicacion al cliente.
-    @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGeneralException(Exception ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
-        problemDetail.setTitle("General Error");
-        return problemDetail;
-    }
-
-    // Maneja la excepcion MethodArgumentNotValidException y devuelve un
-    // ProblemDetail con
-    // el estado HTTP 400 y un mensaje de error que contiene los errores de
-    // validacion
+    // 400 - Falló @Valid del DTO (ej: @NotNull, @DifferentAccounts)
+    // Aquí llegan los errores de Bean Validation
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatus(
-                HttpStatus.BAD_REQUEST);
-        problemDetail.setTitle("Method Argument Not Valid");
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle("Validation Failed");
 
-        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .toList();
+        List<String> errors = new ArrayList<>();
+        // Errores de campos: ej "amount must be positive"
+        ex.getBindingResult().getFieldErrors().forEach(error -> errors.add(error.getDefaultMessage()));
+        // Errores de clase: ej "Source and target accounts must be different"
+        ex.getBindingResult().getGlobalErrors().forEach(error -> errors.add(error.getDefaultMessage()));
+
         problemDetail.setProperty("errors", errors);
         return problemDetail;
     }
 
+    // 500 - Cualquier error no controlado. No le mostramos el stacktrace al
+    // cliente.
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGeneralException(Exception ex) {
+        // Aquí deberías hacer log.error("Unexpected error", ex);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
+        problemDetail.setTitle("Unexpected Error");
+        return problemDetail;
+    }
 }
