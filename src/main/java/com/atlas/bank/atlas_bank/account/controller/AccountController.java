@@ -9,6 +9,7 @@ import com.atlas.bank.atlas_bank.account.dto.CreateAccountRequest;
 import com.atlas.bank.atlas_bank.account.model.Account;
 import com.atlas.bank.atlas_bank.account.service.IAccountService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -29,7 +30,9 @@ public class AccountController {
     private final AccountMapper accountMapper;
 
     @PostMapping
-    public ResponseEntity<AccountResponse> create(@RequestBody CreateAccountRequest request) {
+    // @valid antes del requestbody para que spring valide el request body y lance
+    // una excepcion si no es valido.
+    public ResponseEntity<AccountResponse> create(@Valid @RequestBody CreateAccountRequest request) {
         Account account = accountMapper.toEntity(request);
         Account saved = iAccountService.create(account);
         return ResponseEntity.status(HttpStatus.CREATED)

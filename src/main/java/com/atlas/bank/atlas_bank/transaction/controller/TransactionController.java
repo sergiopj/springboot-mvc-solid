@@ -17,6 +17,7 @@ import com.atlas.bank.atlas_bank.transaction.dto.TransferRequest;
 import com.atlas.bank.atlas_bank.transaction.service.ITransactionQueryService;
 import com.atlas.bank.atlas_bank.transaction.service.ITransferService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -29,7 +30,9 @@ public class TransactionController {
     private final TransactionMapper transactionMapper;
 
     @PostMapping("/transfer")
-    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransferRequest request) {
+    // @valid antes del requestbody para que spring valide el request body y lance
+    // una excepcion si no es valido.
+    public ResponseEntity<TransactionResponse> transfer(@Valid @RequestBody TransferRequest request) {
         var saved = iTransferService.execute(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(transactionMapper.toResponse(saved));
