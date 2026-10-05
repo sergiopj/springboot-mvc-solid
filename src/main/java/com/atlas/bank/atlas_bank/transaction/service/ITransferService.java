@@ -5,6 +5,6 @@ import com.atlas.bank.atlas_bank.transaction.model.Transaction;
 
 public interface ITransferService {
 
-    Transaction transfer(TransferRequest request);
+    Transaction execute(TransferRequest request);
 
 }

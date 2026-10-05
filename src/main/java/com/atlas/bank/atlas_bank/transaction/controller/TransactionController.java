@@ -30,7 +30,7 @@ public class TransactionController {
 
     @PostMapping("/transfer")
     public ResponseEntity<TransactionResponse> transfer(@RequestBody TransferRequest request) {
-        var saved = iTransferService.transfer(request);
+        var saved = iTransferService.execute(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(transactionMapper.toResponse(saved));
     }
