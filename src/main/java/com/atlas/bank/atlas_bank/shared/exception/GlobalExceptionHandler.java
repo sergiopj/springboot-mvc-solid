@@ -11,9 +11,13 @@ import com.atlas.bank.atlas_bank.account.exception.AccountNotFoundException;
 import com.atlas.bank.atlas_bank.account.exception.AccountNotActiveException;
 import com.atlas.bank.atlas_bank.transaction.exception.InsufficientFundsException;
 
+import lombok.extern.slf4j.Slf4j;
+
 // Filtro global de errores. Si en cualquier Controller o Service lanzas una excepción, cae aquí.
 // Convierte la excepción en un JSON estándar (RFC 7807 ProblemDetail) para el cliente.
 // En NestJS sería @Catch() global.
+// Genera un logger SLF4J ('log') para registrar trazas y errores en consola.
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -61,11 +65,11 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    // 500 - Cualquier error no controlado. No le mostramos el stacktrace al
-    // cliente.
+    // 500 - Cualquier error no controlado. Registramos el error en consola para poder depurar
+    // y devolvemos un mensaje genérico seguro al cliente.
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneralException(Exception ex) {
-        // Aquí deberías hacer log.error("Unexpected error", ex);
+        log.error("Error no controlado en la aplicación: ", ex);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
         problemDetail.setTitle("Unexpected Error");

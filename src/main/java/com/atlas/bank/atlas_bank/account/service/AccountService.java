@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.atlas.bank.atlas_bank.account.exception.AccountNotFoundException;
 import com.atlas.bank.atlas_bank.account.model.Account;
+import com.atlas.bank.atlas_bank.account.model.enums.AccountStatus;
 import com.atlas.bank.atlas_bank.account.repository.AccountRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class AccountService implements IAccountService {
 
     @Override
     public Account create(Account account) {
-        account.setStatus("ACTIVE");
+        account.setStatus(AccountStatus.ACTIVE);
         return accountRepository.save(account);
     }
 
