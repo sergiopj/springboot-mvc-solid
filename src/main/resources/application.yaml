@@ -1,20 +1,48 @@
+# Configuración principal de Spring Boot
 spring:
+  # Nombre identificador de la aplicación (usado en logs, trazas y métricas)
   application:
     name: atlas-bank
 
+  # Configuración del origen de datos (Base de datos H2 en memoria para desarrollo local)
   datasource:
+    # URL de conexión JDBC: base de datos volátil alojada en memoria RAM
     url: jdbc:h2:mem:atlasbank
+    # Clase del driver JDBC oficial de H2 para establecer la conexión
     driver-class-name: org.h2.Driver
+    # Usuario por defecto del administrador de H2
     username: sa
+    # Contraseña de acceso (vacía por defecto en H2)
     password: ""
+
+  # Configuración de JPA e Hibernate (ORM para interactuar con la base de datos)
   jpa: 
+    # Dialecto que indica a Hibernate que genere SQL compatible con la sintaxis de H2
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
+      # create-drop: genera todas las tablas al iniciar la app y las destruye al detenerla
       ddl-auto: create-drop
+    # Muestra en la consola todas las consultas SQL (INSERT, SELECT, etc.) que ejecuta Hibernate
     show-sql: true
+
+  # Configuración de la consola web gráfica de H2
   h2:
     console:
+      # Activa la consola web visual accesible desde el navegador
       enabled: true
+      # Ruta URL donde se abre la consola (http://localhost:8080/h2-console)
       path: /h2-console
+
+  # Configuración de seguridad con OAuth2 / Keycloak (Resource Server)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # URL del emisor del token en Keycloak (el Realm 'atlas-bank')
+          # Spring Boot descargará automáticamente las claves públicas de esta URL para validar los JWT
+          issuer-uri: http://localhost:8181/realms/atlas-bank
+
+# Configuración del servidor web embebido (Tomcat)
 server: 
+  # Puerto TCP en el que escucha peticiones HTTP nuestra API
   port: 8080

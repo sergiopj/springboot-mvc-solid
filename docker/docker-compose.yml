@@ -1,0 +1,92 @@
+# Nombre del proyecto en Docker Compose (agrupa los contenedores en Docker Desktop)
+name: atlas-bank
+
+services:
+  # Servicio 1: Base de datos relacional PostgreSQL para el Banco
+  postgres:
+    image: postgres:17
+    container_name: atlas-bank-db
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas123
+      POSTGRES_DB: atlas_bank
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Servicio 2: API de Spring Boot
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: atlas-bank-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/atlas_bank
+      SPRING_DATASOURCE_USERNAME: atlas
+      SPRING_DATASOURCE_PASSWORD: atlas123
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_H2_CONSOLE_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Servicio 3: Servidor de Autenticación e Identidad Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: atlas-bank-keycloak
+    command: start-dev
+    ports:
+      - "8181:8080"
+    environment:
+      # Credenciales del administrador inicial
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Configuración de base de datos dedicada en PostgreSQL
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-kc:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+    # Orden de arranque: Keycloak NO arranca hasta que la BD postgres-kc esté 100% lista
+    depends_on:
+      postgres-kc:
+        # Espera a que el healthcheck de postgres-kc pase y esté en estado 'healthy'
+        condition: service_healthy
+
+  # Servicio 4: Base de datos PostgreSQL dedicada para Keycloak
+  postgres-kc:
+    image: postgres:17
+    container_name: atlas-bank-keycloak-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    # Volumen persistente para no perder los usuarios y configuraciones de Keycloak
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    # Comprobación de salud: verifica que PostgreSQL esté aceptando conexiones antes de avisar a Keycloak
+    healthcheck:
+      # Comando que prueba la conexión usando el usuario y base de datos de Keycloak
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      # Intervalo entre comprobaciones
+      interval: 5s
+      # Tiempo de espera máximo por intento
+      timeout: 5s
+      # Intentos antes de considerar que falló
+      retries: 5
+
+# Definición de volúmenes persistentes
+volumes:
+  postgres_data:
+  keycloak_data:
