@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -65,7 +66,22 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    // 500 - Cualquier error no controlado. Registramos el error en consola para poder depurar
+    // 409 - Violación de restricción única en la BD (ej: account_number duplicado)
+    // Spring lanza DataIntegrityViolationException cuando se intenta insertar un
+    // valor
+    // que ya existe en una columna marcada como UNIQUE en la entidad
+    // (@Column(unique = true))
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.warn("Violación de integridad de datos: {}", ex.getMostSpecificCause().getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, "Account number already exists or violates a unique constraint.");
+        problemDetail.setTitle("Conflict");
+        return problemDetail;
+    }
+
+    // 500 - Cualquier error no controlado. Registramos el error en consola para
+    // poder depurar
     // y devolvemos un mensaje genérico seguro al cliente.
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneralException(Exception ex) {
