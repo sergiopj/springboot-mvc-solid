@@ -14,15 +14,12 @@ import com.atlas.bank.atlas_bank.transaction.exception.InsufficientFundsExceptio
 
 import lombok.extern.slf4j.Slf4j;
 
-// Filtro global de errores. Si en cualquier Controller o Service lanzas una excepción, cae aquí.
-// Convierte la excepción en un JSON estándar (RFC 7807 ProblemDetail) para el cliente.
-// En NestJS sería @Catch() global.
-// Genera un logger SLF4J ('log') para registrar trazas y errores en consola.
+// Manejador global de excepciones para transformar errores en respuestas RFC 7807 (ProblemDetail)
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 404 - La cuenta no existe
+    // 404 - Cuenta no encontrada
     @ExceptionHandler(AccountNotFoundException.class)
     public ProblemDetail handleAccountNotFoundException(AccountNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -30,8 +27,7 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    // 422 - La cuenta existe pero está bloqueada/cerrada. Es error de negocio, no
-    // de datos.
+    // 422 - Cuenta inactiva o bloqueada
     @ExceptionHandler(AccountNotActiveException.class)
     public ProblemDetail handleAccountNotActiveException(AccountNotActiveException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT,
@@ -40,7 +36,7 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    // 422 - No hay saldo. También es error de negocio.
+    // 422 - Fondos insuficientes para la transferencia
     @ExceptionHandler(InsufficientFundsException.class)
     public ProblemDetail handleInsufficientFundsException(InsufficientFundsException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT,
@@ -49,28 +45,21 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    // 400 - Falló @Valid del DTO (ej: @NotNull, @DifferentAccounts)
-    // Aquí llegan los errores de Bean Validation
+    // 400 - Fallos de validación en DTOs (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problemDetail.setTitle("Validation Failed");
 
         List<String> errors = new ArrayList<>();
-        // Errores de campos: ej "amount must be positive"
         ex.getBindingResult().getFieldErrors().forEach(error -> errors.add(error.getDefaultMessage()));
-        // Errores de clase: ej "Source and target accounts must be different"
         ex.getBindingResult().getGlobalErrors().forEach(error -> errors.add(error.getDefaultMessage()));
 
         problemDetail.setProperty("errors", errors);
         return problemDetail;
     }
 
-    // 409 - Violación de restricción única en la BD (ej: account_number duplicado)
-    // Spring lanza DataIntegrityViolationException cuando se intenta insertar un
-    // valor
-    // que ya existe en una columna marcada como UNIQUE en la entidad
-    // (@Column(unique = true))
+    // 409 - Conflicto por restricción única en BD (ej: número de cuenta duplicado)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         log.warn("Violación de integridad de datos: {}", ex.getMostSpecificCause().getMessage());
@@ -80,9 +69,7 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    // 500 - Cualquier error no controlado. Registramos el error en consola para
-    // poder depurar
-    // y devolvemos un mensaje genérico seguro al cliente.
+    // 500 - Errores no controlados
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneralException(Exception ex) {
         log.error("Error no controlado en la aplicación: ", ex);

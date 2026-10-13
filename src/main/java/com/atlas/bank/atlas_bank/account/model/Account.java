@@ -21,25 +21,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// Entidad JPA que representa una cuenta bancaria
 @Entity
 @Table(name = "accounts")
 @Getter
 @Setter
-// Genera un constructor vacío (sin parámetros).
-// Es obligatorio para JPA/Hibernate, ya que lo necesita para instanciar el
-// objeto al hacer consultas a la BD.
 @NoArgsConstructor
-// Genera un constructor con todos los atributos de la clase como parámetros.
-// Permite instanciar objetos completos fácilmente (muy útil en tests y mapeos).
 @AllArgsConstructor
-// Solo incluye en equals() y hashCode() los campos marcados explícitamente con
-// @EqualsAndHashCode.Include
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Account {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // ID autoincremental generado automáticamente por la BD
-    @EqualsAndHashCode.Include // Dos cuentas se consideran la misma si comparten el mismo ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "account_number", nullable = false, unique = true)
@@ -65,12 +59,7 @@ public class Account {
     @Column(name = "create_at", nullable = false, updatable = false)
     private LocalDateTime createAt;
 
-    /**
-     * Callback del ciclo de vida de JPA.
-     * Se ejecuta automáticamente justo antes del primer INSERT (@PrePersist).
-     * Garantiza valores por defecto para evitar nulos y estados inconsistentes
-     * si el cliente no los proporciona al crear la cuenta.
-     */
+    // Asigna valores por defecto antes de persistir en base de datos
     @PrePersist
     public void prePersist() {
         this.createAt = LocalDateTime.now();
@@ -81,5 +70,4 @@ public class Account {
             balance = BigDecimal.ZERO;
         }
     }
-
 }

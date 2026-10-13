@@ -5,22 +5,16 @@ import org.mapstruct.Mapping;
 
 import com.atlas.bank.atlas_bank.account.model.Account;
 
-// MapStruct genera automáticamente el código de mapeo en tiempo de compilación.
-// Si los nombres y tipos de atributos coinciden entre origen y destino, los enlaza de forma automática.
-// componentModel = "spring" convierte esta interfaz en un componente/Bean inyectable de Spring.
+// Mapper MapStruct para conversiones entre entidades Account y sus DTOs
 @Mapper(componentModel = "spring")
 public interface AccountMapper {
 
-    // Convierte CreateAccountRequest a la entidad Account.
-    // Los campos que coinciden se asignan solos. Se usa ignore = true para aquellos
-    // que no vienen en la petición y son administrados por el sistema (BD o lógica de negocio).
+    // Mapea la petición a entidad ignorando campos autogenerados por el sistema
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createAt", ignore = true)
     Account toEntity(CreateAccountRequest request);
 
-    // Mapeo 100% automático: como los campos de Account coinciden con AccountResponse,
-    // MapStruct genera los getters y setters automáticamente sin necesidad de anotaciones @Mapping.
+    // Mapea la entidad Account a su DTO de respuesta
     AccountResponse toResponse(Account account);
-
 }

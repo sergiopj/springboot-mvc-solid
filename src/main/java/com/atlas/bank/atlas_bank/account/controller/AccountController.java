@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+// Controlador REST para la gestión de cuentas bancarias
 @RestController
 @RequestMapping("/api/v1/accounts")
 @RequiredArgsConstructor
@@ -29,9 +30,8 @@ public class AccountController {
     private final IAccountService iAccountService;
     private final AccountMapper accountMapper;
 
+    // Crea una nueva cuenta bancaria previa validación del cuerpo de la petición
     @PostMapping
-    // @valid antes del requestbody para que spring valide el request body y lance
-    // una excepcion si no es valido.
     public ResponseEntity<AccountResponse> create(@Valid @RequestBody CreateAccountRequest request) {
         Account account = accountMapper.toEntity(request);
         Account saved = iAccountService.create(account);
@@ -39,6 +39,7 @@ public class AccountController {
                 .body(accountMapper.toResponse(saved));
     }
 
+    // Retorna el listado completo de cuentas
     @GetMapping
     public ResponseEntity<List<AccountResponse>> findAll() {
         var accounts = iAccountService.findAll();
@@ -46,9 +47,9 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
+    // Retorna una cuenta por su identificador
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(accountMapper.toResponse(iAccountService.findById(id)));
     }
-
 }
