@@ -50,12 +50,16 @@ public class Transaction {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Motivo o descripción (usado para conceptos o razones de rechazo en auditoría)
+    @Column(name = "description", length = 255)
+    private String description;
+
     // Asigna fecha de creación y estado por defecto antes de persistir
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) {
-            this.status = TransactionStatus.PENDING;
+            this.status = TransactionStatus.EXECUTED; // Estado por defecto al crear una transacción
         }
     }
 }

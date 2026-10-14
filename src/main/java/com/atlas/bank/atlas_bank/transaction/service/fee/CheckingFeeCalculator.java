@@ -15,8 +15,8 @@ public class CheckingFeeCalculator implements FeeCalculator {
 
     // Aplica solo si la cuenta es de tipo CHECKING
     @Override
-    public boolean supports(String accountType) {
-        return AccountType.CHECKING.name().equals(accountType);
+    public boolean supports(AccountType accountType) {
+        return AccountType.CHECKING.equals(accountType);
     }
 
     // Calcula el 1.5% de comisión sobre el monto transferido

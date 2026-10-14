@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.atlas.bank.atlas_bank.account.exception.AccountNotFoundException;
 import com.atlas.bank.atlas_bank.account.exception.AccountNotActiveException;
 import com.atlas.bank.atlas_bank.transaction.exception.InsufficientFundsException;
+import com.atlas.bank.atlas_bank.transaction.service.exception.FraudCheckException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -78,4 +79,13 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Unexpected Error");
         return problemDetail;
     }
+
+    @ExceptionHandler(FraudCheckException.class)
+    public ProblemDetail handleFraudCheckException(FraudCheckException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT,
+                ex.getMessage());
+        problemDetail.setTitle("Fraud detected in operation");
+        return problemDetail;
+    }
+
 }

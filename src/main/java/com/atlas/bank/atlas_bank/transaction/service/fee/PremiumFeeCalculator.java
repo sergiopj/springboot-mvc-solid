@@ -15,8 +15,8 @@ public class PremiumFeeCalculator implements FeeCalculator {
 
     // Aplica solo si la cuenta es de tipo PREMIUM
     @Override
-    public boolean supports(String accountType) {
-        return AccountType.PREMIUM.name().equals(accountType);
+    public boolean supports(AccountType accountType) {
+        return AccountType.PREMIUM.equals(accountType);
     }
 
     // Cuentas premium no pagan comisión (0)

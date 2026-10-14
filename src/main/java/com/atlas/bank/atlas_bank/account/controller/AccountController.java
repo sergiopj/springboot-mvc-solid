@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.atlas.bank.atlas_bank.account.dto.AccountMapper;
 import com.atlas.bank.atlas_bank.account.dto.AccountResponse;
 import com.atlas.bank.atlas_bank.account.dto.CreateAccountRequest;
+import com.atlas.bank.atlas_bank.account.dto.DashboardResponse;
 import com.atlas.bank.atlas_bank.account.model.Account;
+import com.atlas.bank.atlas_bank.account.service.AccountDashboardFacade;
 import com.atlas.bank.atlas_bank.account.service.IAccountService;
 
 import jakarta.validation.Valid;
@@ -29,6 +31,7 @@ public class AccountController {
 
     private final IAccountService iAccountService;
     private final AccountMapper accountMapper;
+    private final AccountDashboardFacade accountDashboardFacade;
 
     // Crea una nueva cuenta bancaria previa validación del cuerpo de la petición
     @PostMapping
@@ -51,5 +54,11 @@ public class AccountController {
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(accountMapper.toResponse(iAccountService.findById(id)));
+    }
+
+    // retorna account dashboard, vamos toda la info del dashboard
+    @GetMapping("/{id}/dashboard")
+    public ResponseEntity<DashboardResponse> findAccountDashboardById(@PathVariable Long id) {
+        return ResponseEntity.ok(accountDashboardFacade.getDashboard(id));
     }
 }

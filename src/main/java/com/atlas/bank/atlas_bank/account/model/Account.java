@@ -57,12 +57,12 @@ public class Account {
     private BigDecimal balance;
 
     @Column(name = "create_at", nullable = false, updatable = false)
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;
 
     // Asigna valores por defecto antes de persistir en base de datos
     @PrePersist
     public void prePersist() {
-        this.createAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
         if (status == null) {
             status = AccountStatus.ACTIVE;
         }

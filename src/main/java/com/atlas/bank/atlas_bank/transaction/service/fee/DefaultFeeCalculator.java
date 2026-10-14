@@ -5,6 +5,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import com.atlas.bank.atlas_bank.account.model.enums.AccountType;
+
 // Estrategia por defecto (Fallback) cuando ningún otro calculador reconoce la cuenta
 // @Order(LOWEST_PRECEDENCE): Garantiza que vaya al final de la lista para evaluarse como último recurso
 @Component
@@ -13,7 +15,7 @@ public class DefaultFeeCalculator implements FeeCalculator {
 
     // Acepta cualquier tipo de cuenta (actúa como comodín)
     @Override
-    public boolean supports(String accountType) {
+    public boolean supports(AccountType accountType) {
         return true;
     }
 

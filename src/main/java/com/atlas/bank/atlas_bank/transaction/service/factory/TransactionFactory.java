@@ -53,5 +53,20 @@ public class TransactionFactory {
 
         return transaction;
     }
-    // Mañana: createDeposit(), createWithdrawal() aquí mismo.
+
+    /**
+     * Crea una transacción rechazada (REJECTED) para auditoría en base de datos.
+     * No aplica comisión (fee = 0) y almacena la razón de bloqueo en la descripción.
+     */
+    public static Transaction createRejectedTransfer(TransferContext context, String reason) {
+        Transaction transaction = new Transaction();
+        transaction.setType(TransactionType.TRANSFER);
+        transaction.setStatus(TransactionStatus.REJECTED);
+        transaction.setSourceAccountId(context.sourceAccount().getId());
+        transaction.setTargetAccountId(context.targetAccount().getId());
+        transaction.setAmount(context.amount());
+        transaction.setFee(BigDecimal.ZERO);
+        transaction.setDescription(reason);
+        return transaction;
+    }
 }

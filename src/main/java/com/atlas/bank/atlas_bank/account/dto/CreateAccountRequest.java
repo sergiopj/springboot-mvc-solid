@@ -2,6 +2,8 @@ package com.atlas.bank.atlas_bank.account.dto;
 
 import java.math.BigDecimal;
 
+import com.atlas.bank.atlas_bank.account.model.enums.AccountType;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,8 +24,8 @@ public class CreateAccountRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Account type is required")
-    private String type;
+    @NotNull(message = "Account type is required")
+    private AccountType type;
 
     @NotNull(message = "Balance is required")
     @PositiveOrZero(message = "Balance must be greater than zero")

@@ -16,8 +16,11 @@ import com.atlas.bank.atlas_bank.transaction.exception.InsufficientFundsExceptio
 import com.atlas.bank.atlas_bank.transaction.model.Transaction;
 import com.atlas.bank.atlas_bank.transaction.repository.TransactionRepository;
 import com.atlas.bank.atlas_bank.transaction.service.event.TransactionExecutedEvent;
+import com.atlas.bank.atlas_bank.transaction.service.exception.FraudCheckException;
 import com.atlas.bank.atlas_bank.transaction.service.factory.TransactionFactory;
 import com.atlas.bank.atlas_bank.transaction.service.fee.FeeCalculator;
+import com.atlas.bank.atlas_bank.transaction.service.fraud.FraudCheckResult;
+import com.atlas.bank.atlas_bank.transaction.service.fraud.FraudChecker;
 
 // Servicio de negocio para la ejecución de transferencias entre cuentas
 @Service
@@ -26,17 +29,20 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
     private final AccountRepository accountRepository;
     private final List<FeeCalculator> feeCalculators;
     private final ApplicationEventPublisher eventPublisher;
+    private final FraudChecker fraudChecker;
 
     // Inyecta las dependencias propias y pasa el repositorio a la clase padre
     // mediante super(...) CONSTRUCTOR
     public TransferService(TransactionRepository transactionRepository,
             AccountRepository accountRepository,
             List<FeeCalculator> feeCalculators,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            FraudChecker fraudChecker) {
         super(transactionRepository);
         this.accountRepository = accountRepository;
         this.feeCalculators = feeCalculators;
         this.eventPublisher = eventPublisher;
+        this.fraudChecker = fraudChecker;
     }
 
     // Punto de entrada: busca las cuentas en BD, arma el contexto y lanza el
@@ -50,18 +56,24 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
                 .orElseThrow(() -> new AccountNotFoundException(request.getTargetAccountId()));
         TransferContext context = new TransferContext(from, to, request.getAmount());
 
-        // 1. Ejecuta el Template Method (valida, aplica comisiones, transfiere y guarda en BD)
+        // 1. Verificación de fraude: si se bloquea, se persiste como REJECTED para auditoría sin mover saldos
+        FraudCheckResult fraudCheckResult = fraudChecker.check(from.getId(), request.getAmount());
+        if (fraudCheckResult.blocked()) {
+            transactionRepository.save(TransactionFactory.createRejectedTransfer(context, fraudCheckResult.reason()));
+            throw new FraudCheckException("Transaction rejected: " + fraudCheckResult.reason());
+        }
+
+        // 2. Ejecuta el Template Method (valida cuentas/fondos, aplica comisiones, transfiere y guarda en BD)
         Transaction transaction = process(context);
 
-        // 2. Publica el evento con los datos reales de la transacción persistida
+        // 3. Publica el evento con los datos reales de la transacción persistida
         eventPublisher.publishEvent(new TransactionExecutedEvent(
                 String.valueOf(transaction.getId()),
                 transaction.getType(),
                 transaction.getSourceAccountId(),
                 transaction.getTargetAccountId(),
                 transaction.getAmount(),
-                transaction.getFee()
-        ));
+                transaction.getFee()));
 
         return transaction;
     }
@@ -70,12 +82,12 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
     @Override
     protected void validate(TransferContext context) {
         if (context.sourceAccount().getStatus() != AccountStatus.ACTIVE) {
-            throw new AccountNotActiveException(context.sourceAccount().getStatus().name(),
+            throw new AccountNotActiveException(context.sourceAccount().getStatus(),
                     context.sourceAccount().getId());
         }
 
         if (context.targetAccount().getStatus() != AccountStatus.ACTIVE) {
-            throw new AccountNotActiveException(context.targetAccount().getStatus().name(),
+            throw new AccountNotActiveException(context.targetAccount().getStatus(),
                     context.targetAccount().getId());
         }
 
@@ -89,7 +101,7 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
     @Override
     protected BigDecimal calculateFee(TransferContext context) {
         FeeCalculator feeCalculator = feeCalculators.stream()
-                .filter(fc -> fc.supports(context.sourceAccount().getType().name()))
+                .filter(fc -> fc.supports(context.sourceAccount().getType()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException(
                         "No hay calculador para el tipo " + context.sourceAccount().getType()));

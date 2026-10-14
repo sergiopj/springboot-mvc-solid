@@ -12,7 +12,7 @@ public interface AccountMapper {
     // Mapea la petición a entidad ignorando campos autogenerados por el sistema
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "createAt", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     Account toEntity(CreateAccountRequest request);
 
     // Mapea la entidad Account a su DTO de respuesta

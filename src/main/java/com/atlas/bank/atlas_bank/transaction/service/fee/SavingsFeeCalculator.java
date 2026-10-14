@@ -14,8 +14,9 @@ import com.atlas.bank.atlas_bank.account.model.enums.AccountType;
 public class SavingsFeeCalculator implements FeeCalculator {
 
     // Aplica solo si la cuenta es de tipo SAVING
-    public boolean supports(String accountType) {
-        return AccountType.SAVING.name().equals(accountType);
+    @Override
+    public boolean supports(AccountType accountType) {
+        return AccountType.SAVING.equals(accountType);
     }
 
     // Calcula el 1% de comisión sobre el monto transferido
