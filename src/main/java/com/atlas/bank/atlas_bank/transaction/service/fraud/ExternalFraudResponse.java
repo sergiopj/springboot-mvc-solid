@@ -3,7 +3,6 @@ package com.atlas.bank.atlas_bank.transaction.service.fraud;
 import com.atlas.bank.atlas_bank.transaction.service.fraud.enums.Recommendation;
 import com.atlas.bank.atlas_bank.transaction.service.fraud.enums.RiskLevel;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -12,7 +11,6 @@ import lombok.Getter;
  * No debe llegar a TransferService. El Adapter lo traduce a FraudCheckResult.
  */
 @Getter
-@AllArgsConstructor
 public class ExternalFraudResponse {
 
     /** Nivel de riesgo que calcula la IA: LOW, MEDIUM, HIGH */
@@ -23,4 +21,10 @@ public class ExternalFraudResponse {
 
     /** Recomendación de la IA: ALLOW, REVIEW, BLOCK */
     private Recommendation recommendation;
+
+    public ExternalFraudResponse(RiskLevel riskLevel, Double score, Recommendation recommendation) {
+        this.riskLevel = riskLevel;
+        this.score = score;
+        this.recommendation = recommendation;
+    }
 }

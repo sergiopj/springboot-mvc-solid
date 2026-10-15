@@ -6,21 +6,16 @@ import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import com.atlas.bank.atlas_bank.account.exception.AccountNotActiveException;
 import com.atlas.bank.atlas_bank.account.exception.AccountNotFoundException;
 import com.atlas.bank.atlas_bank.account.model.Account;
-import com.atlas.bank.atlas_bank.account.model.enums.AccountStatus;
 import com.atlas.bank.atlas_bank.account.repository.AccountRepository;
 import com.atlas.bank.atlas_bank.transaction.dto.TransferRequest;
-import com.atlas.bank.atlas_bank.transaction.exception.InsufficientFundsException;
 import com.atlas.bank.atlas_bank.transaction.model.Transaction;
 import com.atlas.bank.atlas_bank.transaction.repository.TransactionRepository;
 import com.atlas.bank.atlas_bank.transaction.service.event.TransactionExecutedEvent;
-import com.atlas.bank.atlas_bank.transaction.service.exception.FraudCheckException;
 import com.atlas.bank.atlas_bank.transaction.service.factory.TransactionFactory;
 import com.atlas.bank.atlas_bank.transaction.service.fee.FeeCalculator;
-import com.atlas.bank.atlas_bank.transaction.service.fraud.FraudCheckResult;
-import com.atlas.bank.atlas_bank.transaction.service.fraud.FraudChecker;
+import com.atlas.bank.atlas_bank.transaction.validation.chain.TransferValidator;
 
 // Servicio de negocio para la ejecución de transferencias entre cuentas
 @Service
@@ -29,7 +24,7 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
     private final AccountRepository accountRepository;
     private final List<FeeCalculator> feeCalculators;
     private final ApplicationEventPublisher eventPublisher;
-    private final FraudChecker fraudChecker;
+    private final List<TransferValidator> validators;
 
     // Inyecta las dependencias propias y pasa el repositorio a la clase padre
     // mediante super(...) CONSTRUCTOR
@@ -37,12 +32,13 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
             AccountRepository accountRepository,
             List<FeeCalculator> feeCalculators,
             ApplicationEventPublisher eventPublisher,
-            FraudChecker fraudChecker) {
+            List<TransferValidator> validators
+            ) {
         super(transactionRepository);
         this.accountRepository = accountRepository;
         this.feeCalculators = feeCalculators;
         this.eventPublisher = eventPublisher;
-        this.fraudChecker = fraudChecker;
+        this.validators = validators;
     }
 
     // Punto de entrada: busca las cuentas en BD, arma el contexto y lanza el
@@ -56,14 +52,7 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
                 .orElseThrow(() -> new AccountNotFoundException(request.getTargetAccountId()));
         TransferContext context = new TransferContext(from, to, request.getAmount());
 
-        // 1. Verificación de fraude: si se bloquea, se persiste como REJECTED para auditoría sin mover saldos
-        FraudCheckResult fraudCheckResult = fraudChecker.check(from.getId(), request.getAmount());
-        if (fraudCheckResult.blocked()) {
-            transactionRepository.save(TransactionFactory.createRejectedTransfer(context, fraudCheckResult.reason()));
-            throw new FraudCheckException("Transaction rejected: " + fraudCheckResult.reason());
-        }
-
-        // 2. Ejecuta el Template Method (valida cuentas/fondos, aplica comisiones, transfiere y guarda en BD)
+        // 1. Ejecuta el Template Method (valida cuentas/fondos/fraude con la cadena de validadores, aplica comisiones, transfiere y guarda en BD)
         Transaction transaction = process(context);
 
         // 3. Publica el evento con los datos reales de la transacción persistida
@@ -81,20 +70,7 @@ public class TransferService extends TransactionProcessor<TransferContext> imple
     // Paso 1: Valida que ambas cuentas estén activas y que haya saldo suficiente
     @Override
     protected void validate(TransferContext context) {
-        if (context.sourceAccount().getStatus() != AccountStatus.ACTIVE) {
-            throw new AccountNotActiveException(context.sourceAccount().getStatus(),
-                    context.sourceAccount().getId());
-        }
-
-        if (context.targetAccount().getStatus() != AccountStatus.ACTIVE) {
-            throw new AccountNotActiveException(context.targetAccount().getStatus(),
-                    context.targetAccount().getId());
-        }
-
-        if (context.sourceAccount().getBalance().compareTo(context.amount()) < 0) {
-            throw new InsufficientFundsException(context.sourceAccount().getId(), context.amount(),
-                    context.sourceAccount().getBalance());
-        }
+        validators.forEach(validator -> validator.validate(context));
     }
 
     // Paso 2: Selecciona la estrategia de comisión adecuada y calcula el monto
