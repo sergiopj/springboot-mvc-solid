@@ -1,6 +1,6 @@
 # 🏛️ Atlas Bank — Spring Boot MVC with SOLID & Clean Code
 
-[![Java](https://img.shields.io/badge/Java-21-orange.svg?logo=openjdk)](https://openjdk.org/)
+[![Java](https://img.shields.io/badge/Java-25-orange.svg?logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x%20%2F%204.x-brightgreen.svg?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Architecture](https://img.shields.io/badge/Architecture-MVC%20%2F%20Package--by--Feature-blue.svg)]()
 [![Code Quality](https://img.shields.io/badge/Design-SOLID%20%26%20Clean%20Code-purple.svg)]()
@@ -62,7 +62,7 @@ src/main/java/com/atlas/bank/atlas_bank/
 
 | Technology | Purpose |
 | :--- | :--- |
-| **Java 21 LTS** | Modern Java with records, pattern matching, and functional streams |
+| **Java 25 LTS** | Modern Java with records, pattern matching, and functional streams |
 | **Spring Boot 3.x / 4.x** | Core MVC web framework & IoC container |
 | **Spring Data JPA & Hibernate** | Object-Relational Mapping (ORM) and persistence |
 | **H2 Database** | Fast, lightweight in-memory database for local development |
@@ -87,7 +87,7 @@ src/main/java/com/atlas/bank/atlas_bank/
 ## 🚀 Getting Started
 
 ### Prerequisites
-* **Java 21** or later installed.
+* **Java 25** or later installed.
 * Terminal (Linux / macOS / WSL / Windows).
 
 ### Clone & Run

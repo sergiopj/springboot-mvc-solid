@@ -1,13 +1,16 @@
 package com.atlas.bank.atlas_bank.account.service;
 
 import java.util.List;
+
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.atlas.bank.atlas_bank.account.exception.AccountNotFoundException;
 import com.atlas.bank.atlas_bank.account.model.Account;
 import com.atlas.bank.atlas_bank.account.model.enums.AccountStatus;
 import com.atlas.bank.atlas_bank.account.repository.AccountRepository;
 
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -41,6 +44,11 @@ public class AccountService implements IAccountService {
 
     @Override
     @Transactional(readOnly = true) // para que Spring abra y cierre la transacción de BD automáticamente
+    // Spring intercepta la llamada mediante un proxy y busca en la caché "accounts"
+    // usando el valor de id como clave. Si encuentra el resultado, lo devuelve sin
+    // ejecutar este método; si no, consulta el repositorio y guarda la cuenta con
+    // esa clave para reutilizarla en futuras llamadas.
+    @Cacheable(value = "accounts", key = "#id")
     public Account findById(Long id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new AccountNotFoundException(id));

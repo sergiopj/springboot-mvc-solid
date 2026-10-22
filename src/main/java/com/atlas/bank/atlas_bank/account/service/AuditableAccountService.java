@@ -1,10 +1,13 @@
 package com.atlas.bank.atlas_bank.account.service;
 
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+
 import com.atlas.bank.atlas_bank.account.model.Account;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -13,11 +16,10 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * El truco está en 2 beans del mismo tipo IAccountService:
  * 1. AccountService (el real, el que toca la BD) -> se llama "accountService"
- * 2. AuditableAccountService (este, el decorador) -> por @Primary es el que usa
- * todo el mundo
+ * 2. AuditableAccountService (este, el decorador) -> por @Primary es
  */
-@Component
-@Primary // Le dice a Spring: cuando alguien pida IAccountService, dale ESTE, no el otro.
+@Service
+@Primary
 @Slf4j
 public class AuditableAccountService implements IAccountService {
 

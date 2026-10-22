@@ -24,18 +24,18 @@ public class SecurityConfig {
                 // Reglas de autorización por endpoint
                 .authorizeHttpRequests(auth -> auth
                         // Cuentas: creación y listado completo solo para ADMIN
-                        .requestMatchers(HttpMethod.POST, "/api/v1/accounts").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/accounts").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/accounts").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/accounts").hasAuthority("ADMIN")
 
                         // Cuentas: consulta por ID permitida a ADMIN y USER
                         .requestMatchers(HttpMethod.GET, "/api/v1/accounts/{id}")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
+                        .hasAnyAuthority("ADMIN", "USER")
 
                         // Transacciones: transferencias y consultas permitidas a ADMIN y USER
                         .requestMatchers(HttpMethod.POST, "/api/v1/transactions/transfer")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
+                        .hasAnyAuthority("ADMIN", "USER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/transactions/{id}/transactions")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
+                        .hasAnyAuthority("ADMIN", "USER")
 
                         // Consola H2 accesible sin token (solo entorno de desarrollo)
                         .requestMatchers("/h2-console/**").permitAll()
@@ -57,7 +57,8 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Convierte los roles de Keycloak (realm_access.roles) a autoridades de Spring Security
+    // Convierte los roles de Keycloak (realm_access.roles) a autoridades de Spring
+    // Security
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
@@ -68,7 +69,7 @@ public class SecurityConfig {
                 return List.of();
             }
 
-            // Los roles ya incluyen el prefijo ROLE_ (ej: ROLE_ADMIN)
+            // Los roles ya incluyen el prefijo ROLE_ (ej: ADMIN)
             return roles.stream()
                     .filter(String.class::isInstance)
                     .map(String.class::cast)

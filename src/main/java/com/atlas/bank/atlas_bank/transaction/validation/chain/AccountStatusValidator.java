@@ -1,5 +1,6 @@
 package com.atlas.bank.atlas_bank.transaction.validation.chain;
 // 1. Paquete dedicado. Ya no está todo metido en service, está aislado.
+
 //    Cada regla vive en su propia clase.
 
 import org.springframework.core.annotation.Order;
@@ -23,7 +24,8 @@ import lombok.RequiredArgsConstructor;
                          // sin tener que tocar el constructor.
 
 public class AccountStatusValidator implements TransferValidator {
-    // 5. IMPLEMENTA LA INTERFAZ COMÚN: Todos los validadores hablan el mismo idioma.
+    // 5. IMPLEMENTA LA INTERFAZ COMÚN: Todos los validadores hablan el mismo
+    // idioma.
     // Esto es lo que permite hacer validators.forEach(v -> v.validate(ctx))
 
     @Override
@@ -31,7 +33,8 @@ public class AccountStatusValidator implements TransferValidator {
         // 6. SINGLE RESPONSIBILITY PRINCIPLE - Aquí está la clave:
         // Esta clase hace UNA SOLA COSA: comprobar que las cuentas están ACTIVE.
         // No comprueba fondos, no comprueba fraude, no comprueba límite diario.
-        // Antes, TransferService tenía 5 responsabilidades. Ahora cada una está separada.
+        // Antes, TransferService tenía 5 responsabilidades. Ahora cada una está
+        // separada.
 
         if (context.sourceAccount().getStatus() != AccountStatus.ACTIVE) {
             throw new AccountNotActiveException(context.sourceAccount().getStatus(),
@@ -44,7 +47,8 @@ public class AccountStatusValidator implements TransferValidator {
             throw new AccountNotActiveException(context.targetAccount().getStatus(),
                     context.targetAccount().getId());
         }
-        // Misma idea para destino. Aunque haya 2 ifs, sigue siendo la MISMA responsabilidad:
+        // Misma idea para destino. Aunque haya 2 ifs, sigue siendo la MISMA
+        // responsabilidad:
         // "estado de cuentas". No está mezclando dominios.
     }
 }
